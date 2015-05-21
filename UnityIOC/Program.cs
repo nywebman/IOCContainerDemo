@@ -12,20 +12,18 @@ namespace UnityIOC
         static void Main(string[] args)
         {
             var container = new UnityContainer();
-            container.RegisterType<ICreditCard, MasterCard>();
-            container.RegisterType<ICreditCard, MasterCard>(new InjectionProperty("chargeCount", 5));
 
-            //from above it knows since it needs ICreditCard, will get concrete MasterCard
+            //ContainerControlledLifetimeManager  makes is a singleton
+            container.RegisterType<ICreditCard, MasterCard>(new ContainerControlledLifetimeManager()); 
+
             var shopper = container.Resolve<Shopper>();
             shopper.Charge();
-
-            //"creditCard" maps to property private readonly ICreditCard creditCard
-            var shopper2 = container.Resolve<Shopper>(new ParameterOverride("creditCard", new Visa()));
-            shopper2.Charge();
-
             Console.WriteLine(shopper.ChargesForCurrentCard);
+
+            var shopper2 = container.Resolve<Shopper>();
+            shopper2.Charge();
             Console.WriteLine(shopper2.ChargesForCurrentCard);
-            
+
             Console.Read();
         }
 
