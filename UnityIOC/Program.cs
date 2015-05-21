@@ -13,14 +13,20 @@ namespace UnityIOC
         {
             var container = new UnityContainer();
             container.RegisterType<ICreditCard, MasterCard>();
-            //property injection
             container.RegisterType<ICreditCard, MasterCard>(new InjectionProperty("chargeCount", 5));
-            //container.RegisterType<ICreditCard, MasterCard>("DefaultCard");
-            //container.RegisterType<ICreditCard, Visa>("BackupCard");
 
-            //var card = new MasterCard();
-            //container.RegisterInstance(card);
+            //from above it knows since it needs ICreditCard, will get concrete MasterCard
+            var shopper = container.Resolve<Shopper>();
+            shopper.Charge();
+
+            //"creditCard" maps to property private readonly ICreditCard creditCard
+            var shopper2 = container.Resolve<Shopper>(new ParameterOverride("creditCard", new Visa()));
+            shopper2.Charge();
+
+            Console.WriteLine(shopper.ChargesForCurrentCard);
+            Console.WriteLine(shopper2.ChargesForCurrentCard);
             
+            Console.Read();
         }
 
         public class Shopper
@@ -30,6 +36,11 @@ namespace UnityIOC
             public Shopper(ICreditCard creditCard)
             {
                 this.creditCard = creditCard;
+            }
+
+            public int ChargesForCurrentCard
+            {
+                get { return creditCard.chargeCount; }
             }
 
             public void Charge()
