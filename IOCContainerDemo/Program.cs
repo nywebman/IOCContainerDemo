@@ -16,9 +16,10 @@ namespace IOCContainerDemo
             ICreditCard otherCard = new Visa();
 
             Resolver resolver = new Resolver();
+            resolver.Register<Shopper, Shopper>();
+            resolver.Register<ICreditCard, MasterCard>();
 
-            var shopper = new Shopper(resolver.ResolveCreditCard()); 
-            //var shopper = new Shopper(otherCard); 
+            var shopper = resolver.Resolve<Shopper>();
 
             shopper.Charge();
             Console.Read();
@@ -64,11 +65,50 @@ namespace IOCContainerDemo
 
     public class Resolver
     {
-        public ICreditCard ResolveCreditCard()
+        private Dictionary<Type,Type> dependancyMap=new Dictionary<Type, Type>();
+        public T Resolve<T>()
         {
-            if (new Random().Next(2) == 1)
-                return new Visa();
-            return new MasterCard();
+            //cast to type T
+            return (T)Resolve(typeof(T));
+        }
+
+        /// <summary>
+        /// is it in our dictionary or not
+        /// </summary>
+        /// <param name="typeToResolve"></param>
+        /// <returns></returns>
+        private object Resolve(Type typeToResolve)
+        {
+            Type resolvedType = null;
+            try
+            {
+                resolvedType = dependancyMap[typeToResolve];
+            }
+            catch
+            {
+                throw new Exception(string.Format("Could not resolve type {0}",typeToResolve.FullName));
+            }
+            var firstConstructor = resolvedType.GetConstructors().First();
+            var constructorParameters = firstConstructor.GetParameters();
+
+            if (!constructorParameters.Any())
+                //reflection way of calling a type
+                return Activator.CreateInstance(resolvedType);
+
+            IList<object> parameters= constructorParameters.Select(parameterToResolve => Resolve(parameterToResolve.ParameterType)).ToList();
+            //IList<object> parameters = new List<object>();
+            //foreach (var parameterToResolve in constructorParameters)
+            //{
+            //    parameters.Add(Resolve(parameterToResolve.ParameterType));
+            //}
+
+
+            return firstConstructor.Invoke(parameters.ToArray());
+        }
+
+        public void Register<TFrom, TTo>()
+        {
+            dependancyMap.Add(typeof(TFrom), typeof(TTo));
         }
     }
 }
