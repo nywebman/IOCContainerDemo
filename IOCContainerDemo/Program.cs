@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace IOCContainerDemo
 {
@@ -13,8 +15,10 @@ namespace IOCContainerDemo
             ICreditCard creditCard=new MasterCard();
             ICreditCard otherCard = new Visa();
 
-            //shopper is not dependant on MasterCard
-            var shopper = new Shopper(otherCard); 
+            Resolver resolver = new Resolver();
+
+            var shopper = new Shopper(resolver.ResolveCreditCard()); 
+            //var shopper = new Shopper(otherCard); 
 
             shopper.Charge();
             Console.Read();
@@ -55,6 +59,16 @@ namespace IOCContainerDemo
         public string Charge()
         {
             return "charging with visa";
+        }
+    }
+
+    public class Resolver
+    {
+        public ICreditCard ResolveCreditCard()
+        {
+            if (new Random().Next(2) == 1)
+                return new Visa();
+            return new MasterCard();
         }
     }
 }
